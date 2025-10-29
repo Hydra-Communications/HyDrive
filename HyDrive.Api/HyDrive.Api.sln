@@ -1,0 +1,40 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HyDrive.Api", "HyDrive.Api\HyDrive.Api.csproj", "{9DCB891B-0AD1-4AA0-A9A1-9C44DA176E34}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HyDrive.Domain", "HyDrive.Domain\HyDrive.Domain.csproj", "{A86B3850-276A-45D1-A61C-B42D1EF12ACD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HyDrive.Infrastructure", "HyDrive.Infrastructure\HyDrive.Infrastructure.csproj", "{ADCC79F6-ECB6-4690-8E53-1A40C76EB947}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HyDrive.Application", "HyDrive.Application\HyDrive.Application.csproj", "{A2D280DB-1911-4508-85EA-7D4CB1C7DA40}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HyDrive.Tests", "HyDrive.Tests\HyDrive.Tests.csproj", "{A877AF49-9A8B-4131-9498-72C18E47DE00}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9DCB891B-0AD1-4AA0-A9A1-9C44DA176E34}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9DCB891B-0AD1-4AA0-A9A1-9C44DA176E34}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9DCB891B-0AD1-4AA0-A9A1-9C44DA176E34}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9DCB891B-0AD1-4AA0-A9A1-9C44DA176E34}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A86B3850-276A-45D1-A61C-B42D1EF12ACD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A86B3850-276A-45D1-A61C-B42D1EF12ACD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A86B3850-276A-45D1-A61C-B42D1EF12ACD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A86B3850-276A-45D1-A61C-B42D1EF12ACD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ADCC79F6-ECB6-4690-8E53-1A40C76EB947}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ADCC79F6-ECB6-4690-8E53-1A40C76EB947}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ADCC79F6-ECB6-4690-8E53-1A40C76EB947}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ADCC79F6-ECB6-4690-8E53-1A40C76EB947}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A2D280DB-1911-4508-85EA-7D4CB1C7DA40}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A2D280DB-1911-4508-85EA-7D4CB1C7DA40}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A2D280DB-1911-4508-85EA-7D4CB1C7DA40}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A2D280DB-1911-4508-85EA-7D4CB1C7DA40}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A877AF49-9A8B-4131-9498-72C18E47DE00}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A877AF49-9A8B-4131-9498-72C18E47DE00}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A877AF49-9A8B-4131-9498-72C18E47DE00}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A877AF49-9A8B-4131-9498-72C18E47DE00}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
