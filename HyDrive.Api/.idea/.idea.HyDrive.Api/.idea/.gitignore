@@ -2,8 +2,8 @@
 /shelf/
 /workspace.xml
 # Rider ignored files
+/.idea.HyDrive.Api.iml
 /contentModel.xml
-/.idea.HyDrive_Api.iml
 /projectSettingsUpdater.xml
 /modules.xml
 # Editor-based HTTP Client requests

@@ -1,7 +1,0 @@
-﻿services:
-  hydrive_api:
-    image: hydrive_api
-    build:
-      context: .
-      dockerfile: HyDrive_Api/Dockerfile
-
