@@ -6,4 +6,8 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\HyDrive.Application\HyDrive.Application.csproj" />
+    </ItemGroup>
+
 </Project>

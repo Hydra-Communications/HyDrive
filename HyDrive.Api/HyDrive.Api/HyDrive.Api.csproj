@@ -11,4 +11,9 @@
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\HyDrive.Application\HyDrive.Application.csproj" />
+      <ProjectReference Include="..\HyDrive.Infrastructure\HyDrive.Infrastructure.csproj" />
+    </ItemGroup>
+
 </Project>

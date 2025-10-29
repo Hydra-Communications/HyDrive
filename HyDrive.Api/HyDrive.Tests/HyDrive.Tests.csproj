@@ -21,4 +21,16 @@
         <Using Include="NUnit.Framework"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\HyDrive.Api\HyDrive.Api.csproj" />
+      <ProjectReference Include="..\HyDrive.Application\HyDrive.Application.csproj" />
+      <ProjectReference Include="..\HyDrive.Domain\HyDrive.Domain.csproj" />
+      <ProjectReference Include="..\HyDrive.Infrastructure\HyDrive.Infrastructure.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Integration\" />
+      <Folder Include="Unit\" />
+    </ItemGroup>
+
 </Project>
