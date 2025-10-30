@@ -8,6 +8,6 @@ public class StorageServiceTests
     [Fact]
     public void AddFileToBucket_WhenProperDataStream_AddsFileToBucket()
     {
-
+        
     }
 }
