@@ -1,16 +1,28 @@
+using HyDrive.Api;
 using HyDrive.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+var appSettings = new AppSettings();
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSingleton(appSettings);
 
-// Temp solution, convert to using sqlite for dev and postgresql for prod later
+// Configure DbContext conditionally
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite("Data Source=app.db"));
+{
+    if (builder.Environment.IsDevelopment())
+    {
+        // Add services to the container.
+        builder.Services.AddEndpointsApiExplorer();
+        builder.Services.AddSwaggerGen();
+        options.UseSqlite(appSettings.SqliteConnection);    
+    }
+    else
+    {
+        options.UseNpgsql(appSettings.DefaultConnection);
+    }
+});
+
 
 var app = builder.Build();
 
