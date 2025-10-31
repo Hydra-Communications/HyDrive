@@ -11,8 +11,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Interfaces\Services\" />
-      <Folder Include="Services\" />
+      <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.10" />
     </ItemGroup>
 
 </Project>

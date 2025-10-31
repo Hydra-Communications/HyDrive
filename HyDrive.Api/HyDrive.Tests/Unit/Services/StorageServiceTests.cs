@@ -1,16 +1,21 @@
 ﻿using System.Text;
+using HyDrive.Api;
+using HyDrive.Application.Services;
+using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
 
 namespace HyDrive.Tests.Unit.Services;
 
 public class StorageServiceTests
-{
+{    
     [Fact]
     public void AddFileToBucket_WithValidStream_AddsFileToBucket()
     {
         // Arrange
-        var storageService = new StorageService();
+        var appSettingsMock = new Mock<IOptions<AppSettings>>();
+        
+        var storageService = new StorageService(appSettingsMock.Object);
         var bucketId = Guid.NewGuid();
         var fileName = "test.txt";
         var fileContent = "Hello world!";
