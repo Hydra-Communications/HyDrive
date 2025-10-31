@@ -1,32 +1,31 @@
 using HyDrive.Api;
 using HyDrive.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
-var appSettings = new AppSettings();
 
-builder.Services.AddSingleton(appSettings);
+builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("AppSettings"));
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
-// Configure DbContext conditionally
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
+builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
 {
-    if (builder.Environment.IsDevelopment())
+    var env = serviceProvider.GetRequiredService<IHostEnvironment>();
+    var settings = serviceProvider.GetRequiredService<IOptions<AppSettings>>().Value;
+
+    if (env.IsDevelopment())
     {
-        // Add services to the container.
-        builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen();
-        options.UseSqlite(appSettings.SqliteConnection);    
+        options.UseSqlite(settings.SqliteConnection);
     }
     else
     {
-        options.UseNpgsql(appSettings.DefaultConnection);
+        options.UseNpgsql(settings.DefaultConnection);
     }
 });
 
-
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

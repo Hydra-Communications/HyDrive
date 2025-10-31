@@ -10,4 +10,9 @@
       <ProjectReference Include="..\HyDrive.Domain\HyDrive.Domain.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Interfaces\Services\" />
+      <Folder Include="Services\" />
+    </ItemGroup>
+
 </Project>

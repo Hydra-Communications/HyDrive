@@ -4,7 +4,7 @@ namespace HyDrive.Infrastructure;
 
 public class ApplicationDbContext : DbContext
 {
-    private ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
     {
     }
