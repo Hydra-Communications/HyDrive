@@ -23,7 +23,8 @@ public class StorageService : IStorageService
             {
                 Directory.CreateDirectory(pathToStore);
             }
-            var finalFilePath = pathToStore + fileName;
+
+            var finalFilePath = Path.Combine(pathToStore, fileName);
             var fileStream = File.Create(finalFilePath);
             await sourceStream.CopyToAsync(fileStream);
         }
