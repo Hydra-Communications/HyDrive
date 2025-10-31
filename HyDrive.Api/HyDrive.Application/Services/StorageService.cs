@@ -1,4 +1,5 @@
-﻿using HyDrive.Api;
+﻿using Domain.Models;
+using HyDrive.Api;
 using HyDrive.Application.Interfaces.Services;
 using Microsoft.Extensions.Options;
 
@@ -22,12 +23,9 @@ public class StorageService : IStorageService
             {
                 Directory.CreateDirectory(pathToStore);
             }
-            else
-            {
-                var finalFilePath = pathToStore + fileName;
-                var fileStream = File.Create(finalFilePath);
-                await sourceStream.CopyToAsync(fileStream);
-            }
+            var finalFilePath = pathToStore + fileName;
+            var fileStream = File.Create(finalFilePath);
+            await sourceStream.CopyToAsync(fileStream);
         }
         catch (Exception ex)
         {
