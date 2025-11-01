@@ -14,9 +14,15 @@ public class StorageService : IStorageService
         _appSettings = appSettings.Value;
     }
     
-    public async Task AddFileToBucket(Guid bucketId, string fileName, Stream sourceStream)
+    public async Task AddFileToBucket(Guid bucketId, string bucketName, string fileName, Stream sourceStream)
     {
-        var pathToStore = Path.Combine(_appSettings.StorageDirectory, "testDir");
+        // Fail early, fail clearly
+        ArgumentNullException.ThrowIfNull(sourceStream);
+        if (string.IsNullOrWhiteSpace(bucketName)) throw new ArgumentNullException(nameof(bucketName));
+        if (string.IsNullOrWhiteSpace(fileName)) throw new ArgumentNullException(nameof(fileName));
+        
+        var bucketDir = bucketId.ToString();
+        var pathToStore = Path.Combine(_appSettings.StorageDirectory, bucketDir);
         try
         {
             if (!Directory.Exists(pathToStore))
@@ -25,12 +31,20 @@ public class StorageService : IStorageService
             }
 
             var finalFilePath = Path.Combine(pathToStore, fileName);
-            var fileStream = File.Create(finalFilePath);
+            
+            if (File.Exists(finalFilePath))
+                throw new IOException($"File '{fileName}' already exists in bucket '{bucketName}'.");
+            
+            await using var fileStream = File.Create(finalFilePath);
             await sourceStream.CopyToAsync(fileStream);
+        }
+        catch (IOException ex)
+        {
+            throw new IOException($"Failed to add file '{fileName}' to bucket '{bucketName}' ({bucketId}).", ex);
         }
         catch (Exception ex)
         {
-            throw new Exception($"Failed to add file {fileName} to bucket {bucketId}", ex);
+            throw new Exception($"Error adding file '{fileName}' to bucket '{bucketName}' ({bucketId}).", ex);
         }
     }
     

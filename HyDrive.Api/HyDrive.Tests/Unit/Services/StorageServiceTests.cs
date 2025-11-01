@@ -17,12 +17,13 @@ public class StorageServiceTests
         
         var storageService = new StorageService(appSettingsMock.Object);
         var bucketId = Guid.NewGuid();
+        var bucketName = "testBucket";
         var fileName = "test.txt";
         var fileContent = "Hello world!";
         using var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(fileContent));
 
         // Act
-        storageService.AddFileToBucket(bucketId, fileName, memoryStream);
+        storageService.AddFileToBucket(bucketId, bucketName, fileName, memoryStream);
         var bucket = storageService.GetBucketById(bucketId);
 
         // Assert
