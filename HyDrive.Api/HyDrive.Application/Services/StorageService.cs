@@ -9,9 +9,9 @@ public class StorageService : IStorageService
 {
     private readonly AppSettings _appSettings;
     
-    public StorageService(IOptions<AppSettings> appSettings)
+    public StorageService(AppSettings appSettings)
     {
-        _appSettings = appSettings.Value;
+        _appSettings = appSettings;
     }
     
     public async Task AddFileToBucket(Guid bucketId, string bucketName, string fileName, Stream sourceStream)
@@ -47,16 +47,9 @@ public class StorageService : IStorageService
             throw new Exception($"Error adding file '{fileName}' to bucket '{bucketName}' ({bucketId}).", ex);
         }
     }
-    
-    public async Task<Bucket> GetBucketById(Guid bucketId)
+
+    public async Task<Bucket?> GetBucketById(Guid bucketId)
     {
-        try
-        {
-            
-        }
-        catch (Exception ex)
-        {
-            
-        }
+        return await Task.FromResult<Bucket?>(null);
     }
 }

@@ -1,18 +1,22 @@
 using HyDrive.Api;
 using HyDrive.Infrastructure;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("AppSettings"));
+var appSettings = builder.Configuration
+      .GetSection("AppSettings")
+      .Get<AppSettings>()
+    ?? throw new InvalidOperationException("AppSettings section is missing or invalid.");
+
+builder.Services.AddSingleton<AppSettings>(appSettings);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
 {
     var env = serviceProvider.GetRequiredService<IHostEnvironment>();
-    var settings = serviceProvider.GetRequiredService<IOptions<AppSettings>>().Value;
+    var settings = serviceProvider.GetRequiredService<AppSettings>();
 
     if (env.IsDevelopment())
     {
