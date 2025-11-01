@@ -20,5 +20,8 @@ public class ApplicationDbContext : DbContext
             .WithMany(e => e.BucketObjects)
             .HasForeignKey(e => e.BucketId)
             .IsRequired();
+
+        modelBuilder.Entity<BucketObject>()
+            .HasIndex(b => b.BucketId);
     }
 }

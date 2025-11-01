@@ -1,4 +1,5 @@
 using HyDrive.Api;
+using HyDrive.Application;
 using HyDrive.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,6 +11,7 @@ var appSettings = builder.Configuration
     ?? throw new InvalidOperationException("AppSettings section is missing or invalid.");
 
 builder.Services.AddSingleton<AppSettings>(appSettings);
+builder.Services.AddApplicationServices();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 

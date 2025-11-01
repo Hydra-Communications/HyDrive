@@ -1,7 +1,6 @@
 ﻿using Domain.Models;
 using HyDrive.Api;
 using HyDrive.Application.Interfaces.Services;
-using Microsoft.Extensions.Options;
 
 namespace HyDrive.Application.Services;
 
