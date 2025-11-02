@@ -22,18 +22,27 @@ public class StorageService : IStorageService
         
         var bucketDir = bucketId.ToString();
         var pathToStore = Path.Combine(_appSettings.StorageDirectory, bucketDir);
-        try
+        if (!Directory.Exists(pathToStore))
         {
-            if (!Directory.Exists(pathToStore))
+            try
             {
                 Directory.CreateDirectory(pathToStore);
             }
+            catch (Exception ex)
+            {
+                throw new IOException($"Failed to create directory '{pathToStore}'", ex);
+            }
+        }
 
-            var finalFilePath = Path.Combine(pathToStore, fileName);
-            
-            if (File.Exists(finalFilePath))
-                throw new IOException($"File '{fileName}' already exists in bucket '{bucketName}'.");
-            
+        var finalFilePath = Path.Combine(pathToStore, fileName);
+
+        if (File.Exists(finalFilePath))
+        {
+            throw new IOException($"File '{fileName}' already exists in bucket '{bucketName}'.");
+        }
+        
+        try
+        {
             await using var fileStream = File.Create(finalFilePath);
             await sourceStream.CopyToAsync(fileStream);
         }
@@ -45,6 +54,11 @@ public class StorageService : IStorageService
         {
             throw new Exception($"Error adding file '{fileName}' to bucket '{bucketName}' ({bucketId}).", ex);
         }
+    }
+
+    public async Task<Bucket> CreateBucket(string bucketName, Guid userId)
+    {
+        
     }
 
     public async Task<Bucket?> GetBucketById(Guid bucketId)

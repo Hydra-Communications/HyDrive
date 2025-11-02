@@ -45,6 +45,37 @@ public class StorageServiceTests : IDisposable
         Assert.True(File.Exists(expectedFilePath), "File should exist after being added.");
     }
 
+    [Fact]
+    public async Task AddFileToBucket_FileAlreadyExists_ThrowsException()
+    {
+        // Arrange
+        var bucketId = Guid.NewGuid();
+        var bucketName = "testBucket";
+        var fileName = "test.txt";
+        var fileContent = "Hello world!";
+        using var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(fileContent));
+        await _storageService.AddFileToBucket(bucketId, bucketName, fileName, memoryStream);
+        
+        // Act & Assert
+        await Assert.ThrowsAsync<IOException>(
+            () => _storageService.AddFileToBucket(bucketId, bucketName, fileName, memoryStream));
+    }
+    
+    [Fact]
+    public async Task AddFileToBucket_BucketDoesNotExist_ThrowsException()
+    {
+        // Arrange
+        var fileName = "test.txt";
+        var fileContent = "Hello world!";
+        using var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(fileContent));
+
+        _storageService.CreateBucket("testBucket", Guid.NewGuid());
+        
+        // Act & Assert
+        await Assert.ThrowsAsync<IOException>(
+            () => _storageService.AddFileToBucket(bucketId, bucketName, fileName, memoryStream));
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_testStoragePath))

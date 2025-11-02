@@ -10,8 +10,8 @@ var appSettings = builder.Configuration
       .Get<AppSettings>()
     ?? throw new InvalidOperationException("AppSettings section is missing or invalid.");
 
-builder.Services.AddSingleton<AppSettings>(appSettings);
-builder.Services.AddApplicationServices();
+builder.Services.AddSingleton(appSettings);
+builder.Services.AddInfrastructureServices();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -22,13 +22,20 @@ builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =
 
     if (env.IsDevelopment())
     {
-        options.UseSqlite(settings.SqliteConnection);
+        var dbPath = Path.Combine(env.ContentRootPath, "App_Data");
+        Directory.CreateDirectory(dbPath);
+
+        var fullPath = Path.Combine(dbPath, "hydrive.db");
+        options.UseSqlite($"Data Source={fullPath}");
+
+        Console.WriteLine($"Using SQLite database at: {fullPath}");
     }
     else
     {
         options.UseNpgsql(settings.DefaultConnection);
     }
 });
+
 
 var app = builder.Build();
 
