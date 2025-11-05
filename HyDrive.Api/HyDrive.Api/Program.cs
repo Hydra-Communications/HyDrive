@@ -11,6 +11,7 @@ var appSettings = builder.Configuration
     ?? throw new InvalidOperationException("AppSettings section is missing or invalid.");
 
 builder.Services.AddSingleton(appSettings);
+builder.Services.AddControllers();
 builder.Services.AddInfrastructureServices();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -46,4 +47,5 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.MapControllers();
 app.Run();

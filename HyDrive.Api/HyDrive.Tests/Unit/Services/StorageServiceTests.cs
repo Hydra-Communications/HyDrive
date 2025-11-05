@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using Domain.Models;
 using HyDrive.Api;
 using HyDrive.Application.Services;
 using HyDrive.Infrastructure;
@@ -89,6 +90,19 @@ public class StorageServiceTests : IDisposable
         // Act & Assert
         await Assert.ThrowsAsync<IOException>(
             () => _storageService.AddFileToBucket(fakeBucketId, newBucket.BucketName, fileName, memoryStream));
+    }
+
+    [Fact]
+    public async Task AddNewBucket_WithProperParameters_AddsBucketToDatabase()
+    {
+        // Arrange
+        // Act
+        var createdBucket = await _storageService.CreateBucket("testBucket", Guid.NewGuid());
+        
+        // Assert
+        var bucketFromDb = await _storageService.GetBucketById(createdBucket.Id);
+        Assert.NotNull(bucketFromDb);
+        Assert.Equal("testBucket", bucketFromDb!.BucketName);
     }
 
     public void Dispose()

@@ -81,6 +81,6 @@ public class StorageService : IStorageService
 
     public async Task<Bucket?> GetBucketById(Guid bucketId)
     {
-        return await Task.FromResult<Bucket?>(null);
+        return await _buckets.GetByIdAsync(bucketId);
     }
 }
