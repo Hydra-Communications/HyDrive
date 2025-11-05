@@ -8,4 +8,5 @@ public interface IBucketObjectRepository
     Task<List<BucketObject>> GetAllAsync(Guid bucketId);
     Task AddAsync(BucketObject bucketObject);
     Task DeleteByIdAsync(Guid bucketObjectId);
+    Task SaveAsync();
 }

@@ -1,5 +1,6 @@
 ﻿using Domain.Models;
 using HyDrive.Api;
+using HyDrive.Application.Interfaces.Repositories;
 using HyDrive.Application.Interfaces.Services;
 
 namespace HyDrive.Application.Services;
@@ -7,10 +8,18 @@ namespace HyDrive.Application.Services;
 public class StorageService : IStorageService
 {
     private readonly AppSettings _appSettings;
+    private readonly IBucketObjectRepository _bucketObjects;
+    private readonly IBucketRepository _buckets;
     
-    public StorageService(AppSettings appSettings)
+    public StorageService(
+        AppSettings appSettings,
+        IBucketObjectRepository bucketObjectRepository,
+        IBucketRepository bucketRepository
+    )
     {
         _appSettings = appSettings;
+        _bucketObjects = bucketObjectRepository;
+        _buckets = bucketRepository;
     }
     
     public async Task AddFileToBucket(Guid bucketId, string bucketName, string fileName, Stream sourceStream)
@@ -58,7 +67,16 @@ public class StorageService : IStorageService
 
     public async Task<Bucket> CreateBucket(string bucketName, Guid userId)
     {
+        var newBucket = new Bucket
+        {
+            BucketName = bucketName,
+            UserId = userId
+        };
         
+        await _buckets.AddAsync(newBucket);
+        await _buckets.SaveAsync();
+        
+        return newBucket;
     }
 
     public async Task<Bucket?> GetBucketById(Guid bucketId)

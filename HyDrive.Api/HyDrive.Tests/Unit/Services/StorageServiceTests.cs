@@ -1,6 +1,9 @@
 ﻿using System.Text;
 using HyDrive.Api;
 using HyDrive.Application.Services;
+using HyDrive.Infrastructure;
+using HyDrive.Infrastructure.Repositories;
+using Microsoft.EntityFrameworkCore;
 using Xunit;
 
 namespace HyDrive.Tests.Unit.Services;
@@ -9,6 +12,7 @@ public class StorageServiceTests : IDisposable
 {
     private readonly string _testStoragePath;
     private readonly StorageService _storageService;
+    private readonly ApplicationDbContext _context;
 
     public StorageServiceTests()
     {
@@ -20,8 +24,18 @@ public class StorageServiceTests : IDisposable
         {
             StorageDirectory = _testStoragePath
         };
+        
+        // in memory db
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+        
+        _context = new ApplicationDbContext(options);
 
-        _storageService = new StorageService(appSettings);
+        var bucketObjectRepo = new BucketObjectRepository(_context);
+        var bucketRepo = new BucketRepository(_context);
+
+        _storageService = new StorageService(appSettings, bucketObjectRepo, bucketRepo);
     }
     
     public StorageService StorageService => _storageService;
@@ -67,13 +81,14 @@ public class StorageServiceTests : IDisposable
         // Arrange
         var fileName = "test.txt";
         var fileContent = "Hello world!";
+        var fakeBucketId = Guid.NewGuid();
         using var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(fileContent));
 
-        _storageService.CreateBucket("testBucket", Guid.NewGuid());
+        var newBucket = await _storageService.CreateBucket("testBucket", Guid.NewGuid());
         
         // Act & Assert
         await Assert.ThrowsAsync<IOException>(
-            () => _storageService.AddFileToBucket(bucketId, bucketName, fileName, memoryStream));
+            () => _storageService.AddFileToBucket(fakeBucketId, newBucket.BucketName, fileName, memoryStream));
     }
 
     public void Dispose()

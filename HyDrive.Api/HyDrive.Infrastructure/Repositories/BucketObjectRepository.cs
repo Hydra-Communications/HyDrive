@@ -20,9 +20,7 @@ public class BucketObjectRepository : IBucketObjectRepository
 
     public async Task<List<BucketObject>> GetAllAsync(Guid bucketId)
     {
-        return await _context.BucketObjects
-            .Where(b => b.BucketId == bucketId)
-            .ToListAsync();   
+        return await _context.BucketObjects.ToListAsync();
     }
     
     public async Task AddAsync(BucketObject bucketObject)
@@ -43,4 +41,6 @@ public class BucketObjectRepository : IBucketObjectRepository
             throw new Exception("BucketObject not found");
         }
     }
+    
+    public async Task SaveAsync() => await _context.SaveChangesAsync();
 }
