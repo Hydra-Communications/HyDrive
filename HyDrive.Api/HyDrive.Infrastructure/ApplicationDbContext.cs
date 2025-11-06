@@ -1,5 +1,6 @@
 ﻿using Domain.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace HyDrive.Infrastructure;
 
@@ -15,22 +16,55 @@ public class ApplicationDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<BucketObject>()
-            .HasOne(e => e.Bucket)
-            .WithMany(e => e.BucketObjects)
-            .HasForeignKey(e => e.BucketId)
-            .IsRequired();
+        modelBuilder.Entity<BucketObject>(entity =>
+        {
+            entity.HasOne(o => o.Bucket)
+                .WithMany(b => b.BucketObjects)
+                .HasForeignKey(o => o.BucketId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
 
-        modelBuilder.Entity<BucketObject>()
-            .HasIndex(b => b.BucketId);
-        
-        
+            entity.HasOne(o => o.User)
+                .WithMany()
+                .HasForeignKey(o => o.UserId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(o => o.BucketId);
+        });
+
+        modelBuilder.Entity<Bucket>(entity =>
+        {
+            entity.HasOne(b => b.User)
+                .WithMany()
+                .HasForeignKey(b => b.UserId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.HasIndex(u => u.Username).IsUnique();
+            entity.HasIndex(u => u.Email).IsUnique();
+        });
     }
     
     public override int SaveChanges()
     {
         UpdateTimestamps();
         return base.SaveChanges();
+    }
+    
+    public override EntityEntry Remove(object entity)
+    {
+        if (entity is BaseEntity baseEntity)
+        {
+            baseEntity.IsDeleted = true;
+            Entry(baseEntity).State = EntityState.Modified;
+            return Entry(baseEntity);
+        }
+
+        return base.Remove(entity);
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
