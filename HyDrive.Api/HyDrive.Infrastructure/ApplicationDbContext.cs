@@ -56,7 +56,7 @@ public class ApplicationDbContext : DbContext
     }
     
     public override EntityEntry Remove(object entity)
-    {
+        {
         if (entity is BaseEntity baseEntity)
         {
             baseEntity.IsDeleted = true;

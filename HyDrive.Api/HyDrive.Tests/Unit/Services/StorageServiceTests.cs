@@ -66,7 +66,7 @@ public class StorageServiceTests : IAsyncLifetime
     private async Task<string> AddTestFileAsync(Guid bucketId, string fileName = "test.txt", string content = "Hello world!")
     {
         using var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(content));
-        await _storageService.AddFileToBucket(bucketId, "testBucket", fileName, memoryStream);
+        await _storageService.AddFileToBucket(bucketId, Guid.NewGuid(), "testBucket", fileName, memoryStream);
         return Path.Combine(_testStoragePath, bucketId.ToString(), fileName);
     }
 
@@ -110,7 +110,7 @@ public class StorageServiceTests : IAsyncLifetime
 
         // Act + Assert
         await Assert.ThrowsAsync<BucketNotFoundException>(
-            () => _storageService.AddFileToBucket(Guid.NewGuid(), "NonExistentBucket", fileName, memoryStream));
+            () => _storageService.AddFileToBucket(Guid.NewGuid(), Guid.NewGuid(), "NonExistentBucket", fileName, memoryStream));
     }
 
     [Fact]
@@ -165,5 +165,50 @@ public class StorageServiceTests : IAsyncLifetime
         
         // Assert
         Assert.Null(bucket);
+    }
+    
+    [Fact]
+    public async Task GetAllBucketsForUser_WithValidUserId_ReturnsAllBucketsForUser()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        await _storageService.CreateBucket("testBucket1", userId);
+        await _storageService.CreateBucket("testBucket2", userId);
+        
+        // Act
+        var buckets = await _storageService.GetAllBucketsForUserAsync(userId);
+        
+        // Assert
+        Assert.Equal(2, buckets.Count);
+        Assert.Equal("testBucket1", buckets[0].BucketName);
+        Assert.Equal("testBucket2", buckets[1].BucketName);
+    }
+    
+    [Fact]
+    public async Task GetAllBucketsForUser_WithInvalidUserId_ReturnsEmptyList()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        
+        // Act
+        var buckets = await _storageService.GetAllBucketsForUserAsync(userId);
+        
+        // Assert
+        Assert.Empty(buckets);
+    }
+
+    [Fact]
+    public async Task GetAllBucketObjectsByBucketId_WithValidBucketId_ReturnsAllBucketObjects()
+    {
+        // Arrange
+        var bucketId = await CreateTestBucketAsync();
+        await AddTestFileAsync(bucketId);
+        await AddTestFileAsync(bucketId, "test2.txt");
+        
+        // Act
+        var bucketObjects = await _storageService.GetBucketObjects(bucketId);
+        
+        // Assert
+        Assert.Equal(2, bucketObjects.Count);
     }
 }

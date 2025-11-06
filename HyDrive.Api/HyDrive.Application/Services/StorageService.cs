@@ -31,7 +31,7 @@ public class StorageService : IStorageService
         return await _buckets.GetAllByUserIdAsync(userId);
     }
 
-    public async Task AddFileToBucket(Guid bucketId, string bucketName, string fileName, Stream sourceStream)
+    public async Task AddFileToBucket(Guid bucketId, Guid userId, string bucketName, string fileName, Stream sourceStream)
     {
         ArgumentNullException.ThrowIfNull(sourceStream);
         if (string.IsNullOrWhiteSpace(bucketName)) throw new ArgumentNullException(nameof(bucketName));
@@ -46,9 +46,19 @@ public class StorageService : IStorageService
             throw new IOException($"File '{fileName}' already exists in bucket '{bucketName}'.");
         
         Directory.CreateDirectory(Path.GetDirectoryName(finalFilePath)!);
+
+        var newBucketObject = new BucketObject
+        {
+            BucketId = bucketId,
+            UserId = userId,
+            ObjectName = fileName
+        };
+        await _bucketObjects.AddAsync(newBucketObject);
         
         await using var fileStream = File.Create(finalFilePath);
         await sourceStream.CopyToAsync(fileStream);
+        await _buckets.SaveAsync();
+        await _bucketObjects.SaveAsync();
     }
 
     public async Task<Bucket> CreateBucket(string bucketName, Guid userId)
@@ -76,6 +86,14 @@ public class StorageService : IStorageService
 
     public async Task<Bucket?> GetBucketById(Guid bucketId)
         => await _buckets.GetByIdAsync(bucketId);
+
+    public async Task<List<BucketObject>> GetBucketObjects(Guid bucketId)
+    {
+        return await _bucketObjects.GetAllByBucketIdAsync(bucketId);
+    }
+    
+    public async Task<List<Bucket>> GetBucketsForUser(Guid userId)
+        => await GetAllBucketsForUserAsync(userId);
     
     private string GetFilePath(Guid bucketId, string fileName)
         => Path.Join(_appSettings.StorageDirectory, bucketId.ToString(), fileName);
