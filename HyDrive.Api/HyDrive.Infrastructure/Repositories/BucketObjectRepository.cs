@@ -18,7 +18,7 @@ public class BucketObjectRepository : IBucketObjectRepository
         return await _context.BucketObjects.FindAsync(bucketObjectId);
     }
 
-    public async Task<List<BucketObject>> GetAllAsync(Guid bucketId)
+    public async Task<List<BucketObject>> GetAllByBucketIdAsync(Guid bucketId)
     {
         return await _context.BucketObjects.ToListAsync();
     }

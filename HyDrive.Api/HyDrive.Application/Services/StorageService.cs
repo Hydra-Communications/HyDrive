@@ -21,6 +21,11 @@ public class StorageService : IStorageService
         _bucketObjects = bucketObjectRepository;
         _buckets = bucketRepository;
     }
+
+    public async Task<bool> BucketExists(Guid bucketId)
+    {
+        return await _buckets.GetByIdAsync(bucketId) != null;
+    }
     
     public async Task AddFileToBucket(Guid bucketId, string bucketName, string fileName, Stream sourceStream)
     {
@@ -29,6 +34,12 @@ public class StorageService : IStorageService
         if (string.IsNullOrWhiteSpace(bucketName)) throw new ArgumentNullException(nameof(bucketName));
         if (string.IsNullOrWhiteSpace(fileName)) throw new ArgumentNullException(nameof(fileName));
         
+        // Check if bucket exists
+        if (!await BucketExists(bucketId))
+        {
+            throw new IOException($"Bucket '{bucketName}' ({bucketId}) does not exist.");
+        }
+
         var bucketDir = bucketId.ToString();
         var pathToStore = Path.Combine(_appSettings.StorageDirectory, bucketDir);
         if (!Directory.Exists(pathToStore))

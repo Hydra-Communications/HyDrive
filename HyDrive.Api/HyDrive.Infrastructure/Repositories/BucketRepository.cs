@@ -22,6 +22,11 @@ public class BucketRepository : IBucketRepository
     {
         return await _context.Buckets.FindAsync(bucketId);
     }
+
+    public async Task<List<Bucket>> GetAllByUserIdAsync(Guid userId)
+    {
+        return await _context.Buckets.Where(b => b.UserId == userId).ToListAsync();
+    }
     
     public async Task<List<Bucket>> GetAllAsync()
     {
