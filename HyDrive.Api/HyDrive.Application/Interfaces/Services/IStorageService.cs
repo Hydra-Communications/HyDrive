@@ -4,9 +4,16 @@ namespace HyDrive.Application.Interfaces.Services;
 
 public interface IStorageService
 {
+    #region Bucket Management
     Task<Bucket> CreateBucket(string bucketName, Guid userId);
-    Task AddFileToBucket(Guid bucketId, Guid userId, string fileName, Stream stream);
+    Task<bool> BucketExists(Guid bucketId);
     Task<Bucket?> GetBucketById(Guid bucketId);
     Task<List<Bucket>> GetAllBucketsForUser(Guid userId);
+    Task DeleteBucket(Guid bucketId);
+    #endregion
+    
+    #region Bucket Object Management
+    Task AddFileToBucket(Guid bucketId, Guid userId, string fileName, Stream stream);
     Task<List<BucketObject>> GetBucketObjects(Guid bucketId);
+    #endregion
 }

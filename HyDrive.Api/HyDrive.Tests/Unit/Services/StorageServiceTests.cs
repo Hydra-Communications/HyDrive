@@ -18,6 +18,12 @@ public class StorageServiceTests : IAsyncLifetime
 
     public StorageService StorageService => _storageService;
     public string StoragePath => _testStoragePath;
+    
+    public User TestUser = new User
+    {
+        Id = new Guid("A1B2C3D4-E5F6-7890-1234-567890ABCDEF"),
+        Username = "testUser"
+    };
 
     public async Task InitializeAsync()
     {
@@ -41,9 +47,9 @@ public class StorageServiceTests : IAsyncLifetime
         var bucketRepo = new BucketRepository(_context);
 
         _storageService = new StorageService(appSettings, bucketObjectRepo, bucketRepo);
-
+        
         // Seed a default test bucket
-        await _storageService.CreateBucket("TestBucket", Guid.NewGuid());
+        await _storageService.CreateBucket("TestBucket", TestUser.Id);
     }
 
     public Task DisposeAsync()
@@ -59,7 +65,7 @@ public class StorageServiceTests : IAsyncLifetime
 
     private async Task<Guid> CreateTestBucketAsync(string name = "testBucket")
     {
-        var bucket = await _storageService.CreateBucket(name, Guid.NewGuid());
+        var bucket = await _storageService.CreateBucket(name, TestUser.Id);
         return bucket.Id;
     }
 
@@ -229,5 +235,18 @@ public class StorageServiceTests : IAsyncLifetime
         Assert.Matches("UpdatedBucket", updatedBucket.BucketName);
     }
     
-    
+    [Fact]
+    public async Task DeleteBucket_WithValidBucket_DeletesBucket()
+    {
+        // Arrange
+        var bucketId = await CreateTestBucketAsync("anotherBucket");
+        var initBucket = await _storageService.GetAllBucketsForUser(TestUser.Id);
+        
+        // Act
+        await _storageService.DeleteBucket(initBucket[0].Id);
+        var bucketsRemaining = await _storageService.GetAllBucketsForUser(TestUser.Id);
+        
+        // Assert
+        Assert.Single(bucketsRemaining);
+    }
 }

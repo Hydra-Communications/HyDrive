@@ -29,7 +29,7 @@ public class StorageService : IStorageService
     /// </summary>
     /// <param name="bucketId">The bucketId for which to search for</param>
     /// <returns>A boolean; true if bucket exists, false if not</returns>
-    private async Task<bool> BucketExists(Guid bucketId)
+    public async Task<bool> BucketExists(Guid bucketId)
         => await _buckets.GetByIdAsync(bucketId) != null;
     
     /// <summary>
@@ -92,6 +92,18 @@ public class StorageService : IStorageService
         await _buckets.SaveAsync();
 
         return update;
+    }
+
+    /// <summary>
+    /// Deletes a bucket.
+    /// Decision was made to silently deal with the problem
+    /// if there is no bucket to delete to reduce complexity/overlogging
+    /// </summary>
+    /// <param name="bucketId">The bucket to delete</param>
+    public async Task DeleteBucket(Guid bucketId)
+    {
+        await _buckets.DeleteByIdAsync(bucketId);
+        await _buckets.SaveAsync();
     }
     #endregion Bucket Management
 
