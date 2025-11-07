@@ -29,4 +29,4 @@ jobs:
 
       - name: Build & Test
         # Build and test in a single step to avoid building twice
-        run: dotnet test HyDrive.Api.sln --verbosity normal
+        run: dotnet test --verbosity minimal
