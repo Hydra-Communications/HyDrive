@@ -9,7 +9,7 @@ on:
 jobs:
   build:
     # Run for non-draft PRs or pushes
-    if: github.event.pull_request.draft == true || github.event_name == 'push'
+    if: github.event.pull_request.draft == false || github.event_name == 'push'
     runs-on: ubuntu-latest
 
     defaults:
