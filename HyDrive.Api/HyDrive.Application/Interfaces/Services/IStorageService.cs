@@ -15,5 +15,7 @@ public interface IStorageService
     #region Bucket Object Management
     Task AddFileToBucket(Guid bucketId, Guid userId, string fileName, Stream stream);
     Task<List<BucketObject>> GetBucketObjects(Guid bucketId);
+    Task<BucketObject> UpdateBucketObject(BucketObject bucketObject);
+    Task UpdateBucketObjectFileContents(BucketObject bucketObject, Stream stream);
     #endregion
 }

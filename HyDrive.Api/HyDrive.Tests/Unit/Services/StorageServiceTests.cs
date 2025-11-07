@@ -19,7 +19,7 @@ public class StorageServiceTests : IAsyncLifetime
     public StorageService StorageService => _storageService;
     public string StoragePath => _testStoragePath;
     
-    public User TestUser = new User
+    private readonly User _testUser = new User
     {
         Id = new Guid("A1B2C3D4-E5F6-7890-1234-567890ABCDEF"),
         Username = "testUser"
@@ -51,7 +51,7 @@ public class StorageServiceTests : IAsyncLifetime
         _storageService = new StorageService(appSettings, bucketObjectRepo, bucketRepo);
         
         // Seed a default test bucket
-        await _storageService.CreateBucket("TestBucket", TestUser.Id);
+        await _storageService.CreateBucket("TestBucket", _testUser.Id);
     }
 
     public Task DisposeAsync()
@@ -65,9 +65,14 @@ public class StorageServiceTests : IAsyncLifetime
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    ///  Creates a test bucket under the name testBucket
+    /// </summary>
+    /// <param name="name">Name to overwrite if needed</param>
+    /// <returns>the Id of the created bucket</returns>
     private async Task<Guid> CreateTestBucketAsync(string name = "testBucket")
     {
-        var bucket = await _storageService.CreateBucket(name, TestUser.Id);
+        var bucket = await _storageService.CreateBucket(name, _testUser.Id);
         return bucket.Id;
     }
 
@@ -89,7 +94,7 @@ public class StorageServiceTests : IAsyncLifetime
         var bucketFromDb = await _storageService.GetBucketById(createdBucket.Id);
 
         Assert.NotNull(bucketFromDb);
-        Assert.Equal("AnotherBucket", bucketFromDb!.BucketName);
+        Assert.Equal("AnotherBucket", bucketFromDb.BucketName);
     }
 
     [Fact]
@@ -130,7 +135,7 @@ public class StorageServiceTests : IAsyncLifetime
         var bucket = await _storageService.GetBucketById(bucketId);
 
         Assert.NotNull(bucket);
-        Assert.Equal("testBucket", bucket!.BucketName);
+        Assert.Equal("testBucket", bucket.BucketName);
         Assert.Equal(bucketId, bucket.Id);
     }
 
@@ -159,11 +164,11 @@ public class StorageServiceTests : IAsyncLifetime
     [Fact]
     public async Task DeleteBucket_WithValidBucket_DeletesBucket()
     {
-        var bucketId = await CreateTestBucketAsync("anotherBucket");
-        var initBucket = await _storageService.GetAllBucketsForUser(TestUser.Id);
+        await CreateTestBucketAsync("anotherBucket");
+        var initBucket = await _storageService.GetAllBucketsForUser(_testUser.Id);
 
         await _storageService.DeleteBucket(initBucket[0].Id);
-        var bucketsRemaining = await _storageService.GetAllBucketsForUser(TestUser.Id);
+        var bucketsRemaining = await _storageService.GetAllBucketsForUser(_testUser.Id);
 
         Assert.Single(bucketsRemaining);
     }
@@ -184,8 +189,8 @@ public class StorageServiceTests : IAsyncLifetime
     public async Task AddFileToBucket_FileAlreadyExists_ThrowsException()
     {
         var bucketId = await CreateTestBucketAsync();
-        var filePath = await AddTestFileAsync(bucketId);
-        await Assert.ThrowsAsync<IOException>(() => AddTestFileAsync(bucketId, "test.txt"));
+        await AddTestFileAsync(bucketId);
+        await Assert.ThrowsAsync<IOException>(() => AddTestFileAsync(bucketId));
     }
 
     [Fact]
@@ -211,5 +216,39 @@ public class StorageServiceTests : IAsyncLifetime
         Assert.Equal(2, bucketObjects.Count);
     }
 
+    [Fact]
+    public async Task UpdateBucketObject_WithValidBucketObject_UpdatesBucketObject()
+    {
+        // Arrange
+        var bucketId = await CreateTestBucketAsync(); 
+        await AddTestFileAsync(bucketId);
+        var bucketObjects = await _storageService.GetBucketObjects(bucketId);
+        bucketObjects[0].ObjectName = "testNewName.txt";
+        
+        // Act
+        var updatedObject = await _storageService.UpdateBucketObject(bucketObjects[0]);
+        
+        // Assert
+        Assert.Matches(updatedObject.ObjectName, "testNewName.txt");
+    }
+
+    [Fact]
+    public async Task UpdateBucketObjectFileContents_WithValidBucketObject_UpdatesBucketObjectFileContents()
+    {
+        // Arrange
+        var bucketId = await CreateTestBucketAsync(); 
+        var originalContent = "Original Content";
+        var updatedContent = "Updated Content";
+        await AddTestFileAsync(bucketId, "test.txt", originalContent);
+        var bucketObjects = await _storageService.GetBucketObjects(bucketId);
+        
+        // Act
+        var filePath = Path.Combine(_testStoragePath, bucketId.ToString(), bucketObjects[0].ObjectName);
+        await File.WriteAllTextAsync(filePath, updatedContent);
+        
+        // Assert
+        var fileContents = await File.ReadAllTextAsync(filePath);
+        Assert.Equal(updatedContent, fileContents);
+    }
     #endregion
 }

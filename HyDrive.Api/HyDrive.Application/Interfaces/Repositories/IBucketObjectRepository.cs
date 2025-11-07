@@ -2,11 +2,7 @@
 
 namespace HyDrive.Application.Interfaces.Repositories;
 
-public interface IBucketObjectRepository
+public interface IBucketObjectRepository : IBaseRepository<BucketObject>
 {
-    Task<BucketObject?> GetByIdAsync(Guid bucketObjectId);
-    Task<List<BucketObject>> GetAllByBucketIdAsync(Guid bucketId);
-    Task AddAsync(BucketObject bucketObject);
-    Task DeleteByIdAsync(Guid bucketObjectId);
-    Task SaveAsync();
+    Task<List<BucketObject>> GetAllByBucketId(Guid bucketId);
 }
