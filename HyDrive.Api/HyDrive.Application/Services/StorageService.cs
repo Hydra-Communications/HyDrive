@@ -24,9 +24,19 @@ public class StorageService : IStorageService
     }
 
     #region Bucket Management
+    /// <summary>
+    /// Checks whether a bucket under a given id exists or not
+    /// </summary>
+    /// <param name="bucketId">The bucketId for which to search for</param>
+    /// <returns>A boolean; true if bucket exists, false if not</returns>
     private async Task<bool> BucketExists(Guid bucketId)
         => await _buckets.GetByIdAsync(bucketId) != null;
     
+    /// <summary>
+    /// Gets all buckets linked to a given user
+    /// </summary>
+    /// <param name="userId">The userId for which the method searches for</param>
+    /// <returns>A list of buckets</returns>
     public async Task<List<Bucket>> GetAllBucketsForUser(Guid userId)
     {
         return await _buckets.GetAllByUserIdAsync(userId);
@@ -91,9 +101,8 @@ public class StorageService : IStorageService
     /// </summary>
     /// <param name="bucketId">The bucket to which the new bucketObject will be assigned</param>
     /// <param name="userId">The userId to which the new bucketObject will be assigned</param>
-    /// <param name="bucketName">The </param>
-    /// <param name="fileName"></param>
-    /// <param name="sourceStream"></param>
+    /// <param name="fileName">The file's name</param>
+    /// <param name="sourceStream">The input stream for the file's data</param>
     /// <exception cref="ArgumentNullException"></exception>
     /// <exception cref="BucketNotFoundException"></exception>
     /// <exception cref="IOException"></exception>
@@ -128,6 +137,11 @@ public class StorageService : IStorageService
         await _bucketObjects.SaveAsync();
     }
     
+    /// <summary>
+    /// Gets all bucket objects for a given bucket
+    /// </summary>
+    /// <param name="bucketId">The parent bucket's id</param>
+    /// <returns>A list of bucket objects</returns>
     public async Task<List<BucketObject>> GetBucketObjects(Guid bucketId)
     {
         return await _bucketObjects.GetAllByBucketIdAsync(bucketId);
