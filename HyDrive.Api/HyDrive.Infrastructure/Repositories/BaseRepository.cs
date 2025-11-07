@@ -29,10 +29,10 @@ public class BaseRepository<T> : IBaseRepository<T> where T : class
         return await _dbSet.ToListAsync();
     }
 
-    public async Task UpdateAsync(T entity)
+    public Task<T> UpdateAsync(T entity)
     {
         _dbSet.Update(entity);
-        await Task.CompletedTask;
+        return Task.FromResult(entity); // return the updated entity
     }
 
     public async Task DeleteByIdAsync(Guid id)

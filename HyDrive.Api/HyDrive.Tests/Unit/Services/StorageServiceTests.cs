@@ -66,7 +66,7 @@ public class StorageServiceTests : IAsyncLifetime
     private async Task<string> AddTestFileAsync(Guid bucketId, string fileName = "test.txt", string content = "Hello world!")
     {
         using var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(content));
-        await _storageService.AddFileToBucket(bucketId, Guid.NewGuid(), "testBucket", fileName, memoryStream);
+        await _storageService.AddFileToBucket(bucketId, Guid.NewGuid(), fileName, memoryStream);
         return Path.Combine(_testStoragePath, bucketId.ToString(), fileName);
     }
 
@@ -110,7 +110,7 @@ public class StorageServiceTests : IAsyncLifetime
 
         // Act + Assert
         await Assert.ThrowsAsync<BucketNotFoundException>(
-            () => _storageService.AddFileToBucket(Guid.NewGuid(), Guid.NewGuid(), "NonExistentBucket", fileName, memoryStream));
+            () => _storageService.AddFileToBucket(Guid.NewGuid(), Guid.NewGuid(), fileName, memoryStream));
     }
 
     [Fact]
@@ -176,7 +176,7 @@ public class StorageServiceTests : IAsyncLifetime
         await _storageService.CreateBucket("testBucket2", userId);
         
         // Act
-        var buckets = await _storageService.GetAllBucketsForUserAsync(userId);
+        var buckets = await _storageService.GetAllBucketsForUser(userId);
         
         // Assert
         Assert.Equal(2, buckets.Count);
@@ -191,7 +191,7 @@ public class StorageServiceTests : IAsyncLifetime
         var userId = Guid.NewGuid();
         
         // Act
-        var buckets = await _storageService.GetAllBucketsForUserAsync(userId);
+        var buckets = await _storageService.GetAllBucketsForUser(userId);
         
         // Assert
         Assert.Empty(buckets);
@@ -211,4 +211,23 @@ public class StorageServiceTests : IAsyncLifetime
         // Assert
         Assert.Equal(2, bucketObjects.Count);
     }
+    
+    [Fact]
+    public async Task UpdateBucket_WithValidBucket_UpdatesBucket()
+    {
+        // Arrange
+        var bucketId = await CreateTestBucketAsync();
+        var initBucket = await _storageService.GetBucketById(bucketId);
+        var oldBucketName = initBucket!.BucketName;
+        
+        // Act
+        initBucket.BucketName = "UpdatedBucket";
+        var updatedBucket = await _storageService.UpdateBucket(initBucket);
+        
+        // assert
+        Assert.NotEqual(oldBucketName, updatedBucket.BucketName);
+        Assert.Matches("UpdatedBucket", updatedBucket.BucketName);
+    }
+    
+    
 }
