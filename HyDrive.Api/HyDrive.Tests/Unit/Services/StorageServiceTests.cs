@@ -25,6 +25,8 @@ public class StorageServiceTests : IAsyncLifetime
         Username = "testUser"
     };
 
+    #region Setup Methods
+    
     public async Task InitializeAsync()
     {
         // Setup temp storage folder
@@ -75,60 +77,17 @@ public class StorageServiceTests : IAsyncLifetime
         await _storageService.AddFileToBucket(bucketId, Guid.NewGuid(), fileName, memoryStream);
         return Path.Combine(_testStoragePath, bucketId.ToString(), fileName);
     }
-
     
-    // BEGIN TESTS :D
-    
-    [Fact]
-    public async Task AddFileToBucket_WithValidStream_AddsFileToBucket()
-    {
-        // Arrange
-        var bucketId = await CreateTestBucketAsync();
+    #endregion
 
-        // Act
-        var filePath = await AddTestFileAsync(bucketId);
-
-        // assert
-        Assert.True(File.Exists(filePath), "File should exist after being added.");
-    }
-
-    [Fact]
-    public async Task AddFileToBucket_FileAlreadyExists_ThrowsException()
-    {
-        // Arrange
-        var bucketId = await CreateTestBucketAsync();
-
-        // Act
-        var filePath = await AddTestFileAsync(bucketId);
-
-        // Assert
-        await Assert.ThrowsAsync<IOException>(
-            () => AddTestFileAsync(bucketId, "test.txt"));
-    }
-
-    [Fact]
-    public async Task AddFileToBucket_BucketDoesNotExist_ThrowsException()
-    {
-        // Arrange
-        var fileName = "test.txt";
-        var fileContent = "Hello world!";
-        using var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(fileContent));
-
-        // Act + Assert
-        await Assert.ThrowsAsync<BucketNotFoundException>(
-            () => _storageService.AddFileToBucket(Guid.NewGuid(), Guid.NewGuid(), fileName, memoryStream));
-    }
+    #region Bucket Management Tests
 
     [Fact]
     public async Task AddNewBucket_WithProperParameters_AddsBucketToDatabase()
     {
-        // Arrange
         var createdBucket = await _storageService.CreateBucket("AnotherBucket", Guid.NewGuid());
-
-        // Act
         var bucketFromDb = await _storageService.GetBucketById(createdBucket.Id);
 
-        // Assert
         Assert.NotNull(bucketFromDb);
         Assert.Equal("AnotherBucket", bucketFromDb!.BucketName);
     }
@@ -136,117 +95,121 @@ public class StorageServiceTests : IAsyncLifetime
     [Fact]
     public async Task AddNewBucket_BucketWithSameNameUnderUserAlreadyExists_ThrowsException()
     {
-        // Arrange
         var userId = Guid.NewGuid();
         await _storageService.CreateBucket("testBucket", userId);
-        
-        // Act + Assert
         await Assert.ThrowsAsync<BucketAlreadyExistsException>(
             () => _storageService.CreateBucket("testBucket", userId));
     }
-    
-    [Fact]
-    public async Task GetBucketById_WithValidBucketId_ReturnsBucket()
-    {
-        // Arrange
-        var bucketId = await CreateTestBucketAsync();
-        
-        // Act
-        var bucket = await _storageService.GetBucketById(bucketId);
-        
-        // Assert
-        Assert.NotNull(bucket);
-        Assert.Equal("testBucket", bucket!.BucketName);
-        Assert.Equal(bucketId, bucket.Id);
-    }
-    
-    [Fact]
-    public async Task GetBucketById_WithInvalidBucketId_ReturnsNull()
-    {
-        // Arrange
-        var bucketId = Guid.NewGuid();
-        
-        // Act
-        var bucket = await _storageService.GetBucketById(bucketId);
-        
-        // Assert
-        Assert.Null(bucket);
-    }
-    
+
     [Fact]
     public async Task GetAllBucketsForUser_WithValidUserId_ReturnsAllBucketsForUser()
     {
-        // Arrange
         var userId = Guid.NewGuid();
         await _storageService.CreateBucket("testBucket1", userId);
         await _storageService.CreateBucket("testBucket2", userId);
-        
-        // Act
+
         var buckets = await _storageService.GetAllBucketsForUser(userId);
-        
-        // Assert
+
         Assert.Equal(2, buckets.Count);
         Assert.Equal("testBucket1", buckets[0].BucketName);
         Assert.Equal("testBucket2", buckets[1].BucketName);
     }
-    
+
     [Fact]
     public async Task GetAllBucketsForUser_WithInvalidUserId_ReturnsEmptyList()
     {
-        // Arrange
         var userId = Guid.NewGuid();
-        
-        // Act
         var buckets = await _storageService.GetAllBucketsForUser(userId);
-        
-        // Assert
         Assert.Empty(buckets);
+    }
+
+    [Fact]
+    public async Task GetBucketById_WithValidBucketId_ReturnsBucket()
+    {
+        var bucketId = await CreateTestBucketAsync();
+        var bucket = await _storageService.GetBucketById(bucketId);
+
+        Assert.NotNull(bucket);
+        Assert.Equal("testBucket", bucket!.BucketName);
+        Assert.Equal(bucketId, bucket.Id);
+    }
+
+    [Fact]
+    public async Task GetBucketById_WithInvalidBucketId_ReturnsNull()
+    {
+        var bucketId = Guid.NewGuid();
+        var bucket = await _storageService.GetBucketById(bucketId);
+        Assert.Null(bucket);
+    }
+
+    [Fact]
+    public async Task UpdateBucket_WithValidBucket_UpdatesBucket()
+    {
+        var bucketId = await CreateTestBucketAsync();
+        var initBucket = await _storageService.GetBucketById(bucketId);
+        var oldBucketName = initBucket!.BucketName;
+
+        initBucket.BucketName = "UpdatedBucket";
+        var updatedBucket = await _storageService.UpdateBucket(initBucket);
+
+        Assert.NotEqual(oldBucketName, updatedBucket.BucketName);
+        Assert.Matches("UpdatedBucket", updatedBucket.BucketName);
+    }
+
+    [Fact]
+    public async Task DeleteBucket_WithValidBucket_DeletesBucket()
+    {
+        var bucketId = await CreateTestBucketAsync("anotherBucket");
+        var initBucket = await _storageService.GetAllBucketsForUser(TestUser.Id);
+
+        await _storageService.DeleteBucket(initBucket[0].Id);
+        var bucketsRemaining = await _storageService.GetAllBucketsForUser(TestUser.Id);
+
+        Assert.Single(bucketsRemaining);
+    }
+
+    #endregion
+
+    #region BucketObject Management Tests
+
+    [Fact]
+    public async Task AddFileToBucket_WithValidStream_AddsFileToBucket()
+    {
+        var bucketId = await CreateTestBucketAsync();
+        var filePath = await AddTestFileAsync(bucketId);
+        Assert.True(File.Exists(filePath), "File should exist after being added.");
+    }
+
+    [Fact]
+    public async Task AddFileToBucket_FileAlreadyExists_ThrowsException()
+    {
+        var bucketId = await CreateTestBucketAsync();
+        var filePath = await AddTestFileAsync(bucketId);
+        await Assert.ThrowsAsync<IOException>(() => AddTestFileAsync(bucketId, "test.txt"));
+    }
+
+    [Fact]
+    public async Task AddFileToBucket_BucketDoesNotExist_ThrowsException()
+    {
+        var fileName = "test.txt";
+        var fileContent = "Hello world!";
+        using var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(fileContent));
+
+        await Assert.ThrowsAsync<BucketNotFoundException>(
+            () => _storageService.AddFileToBucket(Guid.NewGuid(), Guid.NewGuid(), fileName, memoryStream));
     }
 
     [Fact]
     public async Task GetAllBucketObjectsByBucketId_WithValidBucketId_ReturnsAllBucketObjects()
     {
-        // Arrange
         var bucketId = await CreateTestBucketAsync();
         await AddTestFileAsync(bucketId);
         await AddTestFileAsync(bucketId, "test2.txt");
-        
-        // Act
+
         var bucketObjects = await _storageService.GetBucketObjects(bucketId);
-        
-        // Assert
+
         Assert.Equal(2, bucketObjects.Count);
     }
-    
-    [Fact]
-    public async Task UpdateBucket_WithValidBucket_UpdatesBucket()
-    {
-        // Arrange
-        var bucketId = await CreateTestBucketAsync();
-        var initBucket = await _storageService.GetBucketById(bucketId);
-        var oldBucketName = initBucket!.BucketName;
-        
-        // Act
-        initBucket.BucketName = "UpdatedBucket";
-        var updatedBucket = await _storageService.UpdateBucket(initBucket);
-        
-        // assert
-        Assert.NotEqual(oldBucketName, updatedBucket.BucketName);
-        Assert.Matches("UpdatedBucket", updatedBucket.BucketName);
-    }
-    
-    [Fact]
-    public async Task DeleteBucket_WithValidBucket_DeletesBucket()
-    {
-        // Arrange
-        var bucketId = await CreateTestBucketAsync("anotherBucket");
-        var initBucket = await _storageService.GetAllBucketsForUser(TestUser.Id);
-        
-        // Act
-        await _storageService.DeleteBucket(initBucket[0].Id);
-        var bucketsRemaining = await _storageService.GetAllBucketsForUser(TestUser.Id);
-        
-        // Assert
-        Assert.Single(bucketsRemaining);
-    }
+
+    #endregion
 }
