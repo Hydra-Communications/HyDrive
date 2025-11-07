@@ -10,9 +10,13 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services)
     {
+        // Services
         services.AddScoped<IStorageService, StorageService>();
+        
+        // Repositories
         services.AddScoped<IBucketRepository, BucketRepository>();
         services.AddScoped<IBucketObjectRepository, BucketObjectRepository>();
+        services.AddScoped<IUserRepository, UserRepository>();
         
         return services;
     }

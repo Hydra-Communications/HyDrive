@@ -8,6 +8,7 @@ public class ApplicationDbContext : DbContext
 {
     public DbSet<Bucket> Buckets { get; set; }
     public DbSet<BucketObject> BucketObjects { get; set; }
+    public DbSet<User> Users { get; set; }
 
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
