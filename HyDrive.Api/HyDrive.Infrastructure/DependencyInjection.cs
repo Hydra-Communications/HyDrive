@@ -1,7 +1,9 @@
-﻿using HyDrive.Application.Interfaces.Repositories;
+﻿using Domain.Models;
+using HyDrive.Application.Interfaces.Repositories;
 using HyDrive.Application.Interfaces.Services;
 using HyDrive.Application.Services;
 using HyDrive.Infrastructure.Repositories;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HyDrive.Infrastructure;
@@ -12,6 +14,7 @@ public static class DependencyInjection
     {
         // Services
         services.AddScoped<IStorageService, StorageService>();
+        services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
         
         // Repositories
         services.AddScoped<IBucketRepository, BucketRepository>();

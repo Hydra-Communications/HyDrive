@@ -66,5 +66,7 @@ public interface IStorageService
     /// </summary>
     Task UpdateBucketObjectFileContents(BucketObject bucketObject, Stream stream);
     
+    Task DeleteBucketObject(BucketObject bucketObject);
+    
     #endregion
 }

@@ -103,6 +103,9 @@ public class StorageService : IStorageService
     /// <param name="bucketId">The bucket to delete</param>
     public async Task DeleteBucket(Guid bucketId)
     {
+        var bucketToDelete = await _buckets.GetByIdAsync(bucketId);
+        ArgumentNullException.ThrowIfNull(bucketToDelete);
+        
         await _buckets.DeleteByIdAsync(bucketId);
         await _buckets.SaveAsync();
     }
@@ -232,6 +235,18 @@ public class StorageService : IStorageService
         await using var fileStream = File.Create(filePath);
         await stream.CopyToAsync(fileStream);
     }
+    
+    /// <summary>
+    /// Deletes a bucket object (soft delete, don't worry)
+    /// </summary>
+    /// <param name="bucketObject">The bucketObject to be deleted</param>
+    public async Task DeleteBucketObject(BucketObject bucketObject)
+    {
+        ArgumentNullException.ThrowIfNull(bucketObject);
+        
+        await _bucketObjects.DeleteByIdAsync(bucketObject.Id);
+        await _bucketObjects.SaveAsync();
+    }
 
     #endregion Bucket Object Management
     
@@ -244,7 +259,10 @@ public class StorageService : IStorageService
     /// <param name="fileName">The file's name and extension</param>
     /// <returns>The full file path</returns>
     private string GetFilePath(Guid bucketId, string fileName)
-        => Path.Join(_appSettings.StorageDirectory, bucketId.ToString(), fileName);
+    {
+        var sanitizedFileName = Path.GetFileName(fileName);
+        return Path.Join(_appSettings.StorageDirectory, bucketId.ToString(), sanitizedFileName);
+    }
     
     #endregion Helper methods
 }
