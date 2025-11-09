@@ -12,21 +12,26 @@
     <ItemGroup>
         <PackageReference Include="coverlet.collector" Version="6.0.0" />
         <PackageReference Include="FluentAssertions" Version="8.8.0" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.10" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
         <PackageReference Include="Moq" Version="4.20.72" />
         <PackageReference Include="xunit" Version="2.9.3" />
-    </ItemGroup>
-    
-    <ItemGroup>
-      <ProjectReference Include="..\HyDrive.Api\HyDrive.Api.csproj" />
-      <ProjectReference Include="..\HyDrive.Application\HyDrive.Application.csproj" />
-      <ProjectReference Include="..\HyDrive.Domain\HyDrive.Domain.csproj" />
-      <ProjectReference Include="..\HyDrive.Infrastructure\HyDrive.Infrastructure.csproj" />
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.5.8">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Integration\" />
-      <Folder Include="Unit\Controllers\" />
+        <ProjectReference Include="..\HyDrive.Api\HyDrive.Api.csproj" />
+        <ProjectReference Include="..\HyDrive.Application\HyDrive.Application.csproj" />
+        <ProjectReference Include="..\HyDrive.Domain\HyDrive.Domain.csproj" />
+        <ProjectReference Include="..\HyDrive.Infrastructure\HyDrive.Infrastructure.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Folder Include="Integration\" />
+        <Folder Include="Unit\Controllers\" />
     </ItemGroup>
 
 </Project>

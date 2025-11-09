@@ -19,3 +19,10 @@ This solution follows a **Clean Architecture** approach, separating concerns acr
 
 - **Tests**  
   Contains automated tests for the solution, including unit, integration, and functional tests. Tests validate the behavior of Domain, Application, and Infrastructure components.
+
+
+**Running migrations**
+
+We have to run migration commands like this since we split out the projects. I didn't want to copy code over and didn't want to think about how to avoid it, so here we go. Anyone who wants to can try to fix it and I'll merge it in.
+```dotnet ef migrations add [MigrationName] --project HyDrive.Infrastructure --startup-project HyDrive.Api
+```

@@ -23,4 +23,8 @@
       <ProjectReference Include="..\HyDrive.Infrastructure\HyDrive.Infrastructure.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="App_Data\" />
+    </ItemGroup>
+
 </Project>
