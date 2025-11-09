@@ -40,5 +40,15 @@ public class UserService : IUserService
         return user;
     }
     
+    public async Task<User?> LoginUser(string email, string password)
+    {
+        var user = await _userRepository.GetByEmailAsync(email);
+        if (user == null)
+            return null;
+
+        var verificationResult = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, password);
+        return verificationResult == PasswordVerificationResult.Success ? user : null;
+    }
+    
     #endregion
 }
