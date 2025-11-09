@@ -24,6 +24,7 @@ public class StorageService : IStorageService
     }
 
     #region Bucket Management
+    
     /// <summary>
     /// Checks whether a bucket under a given id exists or not
     /// </summary>
@@ -105,9 +106,11 @@ public class StorageService : IStorageService
         await _buckets.DeleteByIdAsync(bucketId);
         await _buckets.SaveAsync();
     }
+    
     #endregion Bucket Management
 
     #region Bucket Object Management
+    
     /// <summary>
     /// Adds a new file to the bucket, creating a new file and directory if need be.
     /// </summary>
@@ -160,48 +163,63 @@ public class StorageService : IStorageService
     }
 
     /// <summary>
-    /// Updates the database side & or the namee of the bucket object.
+    /// Updates bucket object metadata in the database.
+    /// Does NOT handle file operations - use RenameBucketObject for renaming files.
     /// </summary>
     /// <param name="bucketObject">The bucket object to be updated</param>
     /// <returns>The updated bucket object</returns>
     public async Task<BucketObject> UpdateBucketObject(BucketObject bucketObject)
     {
         ArgumentNullException.ThrowIfNull(bucketObject);
-
-        var filePath = GetFilePath(bucketObject.BucketId, bucketObject.ObjectName);
-        var currentBucketObject = await _bucketObjects.GetByIdAsync(bucketObject.Id)
-                                  ?? throw new BucketObjectNotFoundException(bucketObject.Id, bucketObject.ObjectName);
-
-        var oldFilePath = GetFilePath(currentBucketObject.BucketId, currentBucketObject.ObjectName);
-
-        // Ensure old file exists
-        if (!File.Exists(oldFilePath))
-            throw new FileNotFoundException("Cannot update file because it does not exist.", oldFilePath);
-
-        // Handle renaming (if the object name changed)
-        if (!string.Equals(bucketObject.ObjectName, currentBucketObject.ObjectName, StringComparison.Ordinal))
-        {
-            var newFilePath = GetFilePath(bucketObject.BucketId, bucketObject.ObjectName);
-
-            // Prevent overwriting an existing file with the new name
-            if (File.Exists(newFilePath))
-                throw new IOException($"A file with the name '{bucketObject.ObjectName}' already exists in this bucket.");
-
-            // Ensure the new directory exists (in case bucket structure changed)
-            Directory.CreateDirectory(Path.GetDirectoryName(newFilePath)!);
-
-            // Move (rename) the file
-            File.Move(oldFilePath, newFilePath);
-        }
-
-        // Update metadata in the database
+    
         var updatedObject = await _bucketObjects.UpdateAsync(bucketObject);
         await _bucketObjects.SaveAsync();
 
         return updatedObject;
     }
 
+    /// <summary>
+    /// Renames a bucket object and its corresponding file on disk.
+    /// </summary>
+    /// <param name="bucketObjectId">The ID of the bucket object to rename</param>
+    /// <param name="newName">The new name for the file</param>
+    /// <exception cref="ArgumentNullException"></exception>
+    /// <exception cref="BucketObjectNotFoundException"></exception>
+    /// <exception cref="FileNotFoundException"></exception>
+    /// <exception cref="IOException"></exception>
+    public async Task RenameBucketObject(Guid bucketObjectId, string newName)
+    {
+        if (string.IsNullOrWhiteSpace(newName))
+            throw new ArgumentNullException(nameof(newName));
+    
+        var bucketObject = await _bucketObjects.GetByIdAsync(bucketObjectId)
+                           ?? throw new BucketObjectNotFoundException(bucketObjectId, "");
+    
+        var oldFilePath = GetFilePath(bucketObject.BucketId, bucketObject.ObjectName);
+    
+        if (!File.Exists(oldFilePath))
+            throw new FileNotFoundException("Cannot rename file because it does not exist.", oldFilePath);
+    
+        var newFilePath = GetFilePath(bucketObject.BucketId, newName);
+    
+        if (File.Exists(newFilePath))
+            throw new IOException($"A file with the name '{newName}' already exists in this bucket.");
+    
+        Directory.CreateDirectory(Path.GetDirectoryName(newFilePath)!);
+        File.Move(oldFilePath, newFilePath);
+    
+        bucketObject.ObjectName = newName;
+        await _bucketObjects.UpdateAsync(bucketObject);
+        await _bucketObjects.SaveAsync();
+    }
 
+    /// <summary>
+    /// Updates the contents of an existing bucket object file.
+    /// </summary>
+    /// <param name="bucketObject">The bucket object whose file contents should be updated</param>
+    /// <param name="stream">The stream containing the new file contents</param>
+    /// <exception cref="ArgumentNullException"></exception>
+    /// <exception cref="FileNotFoundException"></exception>
     public async Task UpdateBucketObjectFileContents(BucketObject bucketObject, Stream stream)
     {
         ArgumentNullException.ThrowIfNull(bucketObject);
@@ -222,9 +240,9 @@ public class StorageService : IStorageService
     /// <summary>
     /// Creates the path to a file from its name and bucketId.
     /// </summary>
-    /// <param name="bucketId">The file's buceketid</param>
+    /// <param name="bucketId">The file's bucketId</param>
     /// <param name="fileName">The file's name and extension</param>
-    /// <returns></returns>
+    /// <returns>The full file path</returns>
     private string GetFilePath(Guid bucketId, string fileName)
         => Path.Join(_appSettings.StorageDirectory, bucketId.ToString(), fileName);
     

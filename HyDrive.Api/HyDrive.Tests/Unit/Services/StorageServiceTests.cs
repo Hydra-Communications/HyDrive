@@ -5,6 +5,7 @@ using HyDrive.Application.Exceptions;
 using HyDrive.Application.Services;
 using HyDrive.Infrastructure;
 using HyDrive.Infrastructure.Repositories;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
@@ -13,8 +14,10 @@ namespace HyDrive.Tests.Unit.Services;
 public class StorageServiceTests : IAsyncLifetime
 {
     private string _testStoragePath = null!;
+    private string _testDatabasePath = null!;
     private StorageService _storageService = null!;
     private ApplicationDbContext _context = null!;
+    private SqliteConnection _connection = null!;
 
     public StorageService StorageService => _storageService;
     public string StoragePath => _testStoragePath;
@@ -22,7 +25,8 @@ public class StorageServiceTests : IAsyncLifetime
     private readonly User _testUser = new User
     {
         Id = new Guid("A1B2C3D4-E5F6-7890-1234-567890ABCDEF"),
-        Username = "testUser"
+        Username = "testUser",
+        Email = "testUser@test.com"
     };
 
     #region Setup Methods
@@ -30,20 +34,36 @@ public class StorageServiceTests : IAsyncLifetime
     public async Task InitializeAsync()
     {
         // Setup temp storage folder
-        _testStoragePath = Path.Combine(Path.GetTempPath(), "HyDriveTestBuckets");
+        _testStoragePath = Path.Combine(Path.GetTempPath(), "HyDriveTestBuckets", Guid.NewGuid().ToString());
         Directory.CreateDirectory(_testStoragePath);
+
+        // Setup temp database file
+        _testDatabasePath = Path.Combine(Path.GetTempPath(), $"HyDriveTest_{Guid.NewGuid()}.db");
 
         var appSettings = new AppSettings
         {
             StorageDirectory = _testStoragePath
         };
 
-        // In-memory database
+        // Create SQLite connection with a file-based database
+        var connectionString = $"Data Source={_testDatabasePath}";
+        _connection = new SqliteConnection(connectionString);
+        await _connection.OpenAsync();
+
+        // Configure EF to use this connection
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .UseSqlite(_connection)
+            .EnableSensitiveDataLogging() // Helpful for debugging
             .Options;
 
         _context = new ApplicationDbContext(options);
+        
+        // Create the database schema
+        await _context.Database.EnsureCreatedAsync();
+
+        // Seed the test user - REQUIRED for foreign key constraint
+        _context.Users.Add(_testUser);
+        await _context.SaveChangesAsync();
 
         var bucketObjectRepo = new BucketObjectRepository(_context);
         var bucketRepo = new BucketRepository(_context);
@@ -54,22 +74,60 @@ public class StorageServiceTests : IAsyncLifetime
         await _storageService.CreateBucket("TestBucket", _testUser.Id);
     }
 
-    public Task DisposeAsync()
+    public async Task DisposeAsync()
     {
+        // Clean up storage folder
         if (Directory.Exists(_testStoragePath))
         {
             Directory.Delete(_testStoragePath, recursive: true);
         }
 
-        _context.Dispose();
-        return Task.CompletedTask;
+        // Dispose context and connection
+        await _context.DisposeAsync();
+        await _connection.CloseAsync();
+        await _connection.DisposeAsync();
+
+        // Delete test database file
+        if (File.Exists(_testDatabasePath))
+        {
+            // Small delay to ensure file handle is released
+            await Task.Delay(100);
+            try
+            {
+                File.Delete(_testDatabasePath);
+            }
+            catch (IOException)
+            {
+                // Database might still be locked, ignore
+            }
+        }
+    }
+
+    /// <summary>
+    /// Creates a test user with all required properties and adds it to the database
+    /// </summary>
+    /// <param name="username">Username for the test user</param>
+    /// <returns>The created and saved User entity</returns>
+    private async Task<User> CreateAndSeedTestUserAsync(string username)
+    {
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Username = username,
+            Email = $"{username}@test.com"
+        };
+        
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+        
+        return user;
     }
 
     /// <summary>
     ///  Creates a test bucket under the name testBucket
     /// </summary>
     /// <param name="name">Name to overwrite if needed</param>
-    /// <returns>the Id of the created bucket</returns>
+    /// <returns>the id of the created bucket</returns>
     private async Task<Guid> CreateTestBucketAsync(string name = "testBucket")
     {
         var bucket = await _storageService.CreateBucket(name, _testUser.Id);
@@ -79,7 +137,7 @@ public class StorageServiceTests : IAsyncLifetime
     private async Task<string> AddTestFileAsync(Guid bucketId, string fileName = "test.txt", string content = "Hello world!")
     {
         using var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(content));
-        await _storageService.AddFileToBucket(bucketId, Guid.NewGuid(), fileName, memoryStream);
+        await _storageService.AddFileToBucket(bucketId, _testUser.Id, fileName, memoryStream);
         return Path.Combine(_testStoragePath, bucketId.ToString(), fileName);
     }
     
@@ -90,7 +148,10 @@ public class StorageServiceTests : IAsyncLifetime
     [Fact]
     public async Task AddNewBucket_WithProperParameters_AddsBucketToDatabase()
     {
-        var createdBucket = await _storageService.CreateBucket("AnotherBucket", Guid.NewGuid());
+        // Create and seed a new user for this test
+        var newUser = await CreateAndSeedTestUserAsync("anotherUser");
+
+        var createdBucket = await _storageService.CreateBucket("AnotherBucket", newUser.Id);
         var bucketFromDb = await _storageService.GetBucketById(createdBucket.Id);
 
         Assert.NotNull(bucketFromDb);
@@ -100,20 +161,24 @@ public class StorageServiceTests : IAsyncLifetime
     [Fact]
     public async Task AddNewBucket_BucketWithSameNameUnderUserAlreadyExists_ThrowsException()
     {
-        var userId = Guid.NewGuid();
-        await _storageService.CreateBucket("testBucket", userId);
+        // Create and seed a new user for this test
+        var newUser = await CreateAndSeedTestUserAsync("duplicateBucketUser");
+
+        await _storageService.CreateBucket("testBucket", newUser.Id);
         await Assert.ThrowsAsync<BucketAlreadyExistsException>(
-            () => _storageService.CreateBucket("testBucket", userId));
+            () => _storageService.CreateBucket("testBucket", newUser.Id));
     }
 
     [Fact]
     public async Task GetAllBucketsForUser_WithValidUserId_ReturnsAllBucketsForUser()
     {
-        var userId = Guid.NewGuid();
-        await _storageService.CreateBucket("testBucket1", userId);
-        await _storageService.CreateBucket("testBucket2", userId);
+        // Create and seed a new user for this test
+        var newUser = await CreateAndSeedTestUserAsync("multiUserTest");
+        
+        await _storageService.CreateBucket("testBucket1", newUser.Id);
+        await _storageService.CreateBucket("testBucket2", newUser.Id);
 
-        var buckets = await _storageService.GetAllBucketsForUser(userId);
+        var buckets = await _storageService.GetAllBucketsForUser(newUser.Id);
 
         Assert.Equal(2, buckets.Count);
         Assert.Equal("testBucket1", buckets[0].BucketName);
@@ -217,19 +282,59 @@ public class StorageServiceTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task UpdateBucketObject_WithValidBucketObject_UpdatesBucketObject()
+    public async Task RenameBucketObject_WithValidBucketObject_RenamesBucketObjectAndFile()
     {
         // Arrange
         var bucketId = await CreateTestBucketAsync(); 
-        await AddTestFileAsync(bucketId);
+        await AddTestFileAsync(bucketId, "test.txt", "original content");
+        await AddTestFileAsync(bucketId, "test2.txt", "dummy data");
+        
         var bucketObjects = await _storageService.GetBucketObjects(bucketId);
-        bucketObjects[0].ObjectName = "testNewName.txt";
+        var bucketToRename = bucketObjects.First(b => b.ObjectName == "test2.txt");
+        
+        // Verify the original file exists
+        var originalFilePath = Path.Combine(_testStoragePath, bucketId.ToString(), "test2.txt");
+        Assert.True(File.Exists(originalFilePath), "Original file should exist before rename");
         
         // Act
-        var updatedObject = await _storageService.UpdateBucketObject(bucketObjects[0]);
+        await _storageService.RenameBucketObject(bucketToRename.Id, "testNewName.txt");
+        
+        // Assert - verify database was updated
+        var updatedObjects = await _storageService.GetBucketObjects(bucketId);
+        var renamedObject = updatedObjects.First(b => b.Id == bucketToRename.Id);
+        Assert.Equal("testNewName.txt", renamedObject.ObjectName);
+        
+        // Verify the file was actually renamed on disk
+        var newFilePath = Path.Combine(_testStoragePath, bucketId.ToString(), "testNewName.txt");
+        Assert.True(File.Exists(newFilePath), "Renamed file should exist");
+        Assert.False(File.Exists(originalFilePath), "Original file should no longer exist");
+        
+        // Verify file contents are preserved
+        var fileContents = await File.ReadAllTextAsync(newFilePath);
+        Assert.Equal("dummy data", fileContents);
+    }
+
+    [Fact]
+    public async Task UpdateBucketObject_WithValidBucketObject_UpdatesBucketObjectMetadata()
+    {
+        // Arrange
+        var bucketId = await CreateTestBucketAsync(); 
+        await AddTestFileAsync(bucketId, "test.txt", "content");
+        
+        var bucketObjects = await _storageService.GetBucketObjects(bucketId);
+        var bucketToUpdate = bucketObjects.First();
+        
+        // Modify some metadata (not the name)
+        // Assuming BucketObject has other properties you might want to update
+        // For now, we'll just verify the update method works
+        var originalName = bucketToUpdate.ObjectName;
+        
+        // Act
+        var updatedObject = await _storageService.UpdateBucketObject(bucketToUpdate);
         
         // Assert
-        Assert.Matches(updatedObject.ObjectName, "testNewName.txt");
+        Assert.Equal(originalName, updatedObject.ObjectName);
+        Assert.Equal(bucketToUpdate.Id, updatedObject.Id);
     }
 
     [Fact]
