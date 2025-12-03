@@ -51,6 +51,12 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "ssl": true,
+            "sslKey": "src/ssl/dev.key",
+            "sslCert": "src/ssl/dev.cert",
+            "port": 4200
+          },
           "configurations": {
             "production": {
               "buildTarget": "HyDrive.Frontend:build:production"
